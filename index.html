@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>BALLS CLICKER LLC</title>
+    <style>
+      #body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: rgb(172, 147, 147);
+      }
+      #score {
+        font-size: 48px;
+      }
+      #ball {
+        width: 500px;
+        height: 500px;
+        background-color: red;
+        border-radius: 50%;
+        cursor: pointer;
+        opacity: 1;
+        transition: opacity 0.5s;
+      }
+
+      #ball.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      #shop {
+        margin-top: 20px;
+        display: flex;
+      }
+      .item {
+        margin-right: 20px;
+      }
+      .item button {
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Balls Clicker LLC presents...</h1>
+    <h3>BALLS CLICKER!</h3>
+    <p>Click the ball to increase your score and level up.</p>
+    <p id="score">Money: 0</p>
+    <div id="ball"></div>
+
+    <div id="shop">
+      <div class="item">
+        <h3>MPC Upgrade</h3>
+        <p>Cost: <span id="mpcCost"></span></p>
+        <button id="mpcButton">Buy</button>
+      </div>
+      <div class="item">
+        <h3>Double Money Potion</h3>
+        <p>Cost: <span id="doubleMoneyCost"></span></p>
+        <button id="doubleMoneyButton">Buy</button>
+      </div>
+      <div class="item">
+        <h3>Decrease Wait Time Potion</h3>
+        <p>Cost: <span id="decreaseWaitTimeCost"></span></p>
+        <button id="decreaseWaitTimeButton">Buy</button>
+      </div>
+    </div>
+    <audio src="BG.mp3" autoplay loop></audio>
+
+    <script>
+      var score = 0;
+      var level = 1;
+      var ball = document.getElementById("ball");
+      var isClickable = true;
+      var mpc = 1;
+      var mpcUpgradeCost = 10;
+      var doubleMoneyCost = 100;
+      var decreaseWaitTimeCost = 50;
+      var isDoubleMoneyActive = false;
+      var isDecreaseWaitTimeActive = false;
+      var waitTime = 1000;
+      var levelsThreshold = {
+        1: 100,
+        2: 1000,
+        3: 10000,
+        4: 100000,
+        5: 1000000,
+        6: 10000000,
+        7: 100000000
+      };
+
+      var levelColors = {
+        1: "red",
+        2: "orange",
+        3: "yellow",
+        4: "green",
+        5: "blue",
+        6: "indigo",
+        7: "violet"
+      };
+
+      var mpcUpgradeFactor = 2;
+
+      var investedMoney = 0;
+
+      function updateBallColor() {
+        ball.style.backgroundColor = levelColors[level];
+      }
+
+      function clickBall() {
+        if (!isClickable) {
+          return;
+        }
+
+        score += mpc;
+        document.getElementById("score").textContent = "Score: " + score;
+
+        if (score >= levelsThreshold[level]) {
+          var confirmUpgrade = confirm(
+            "Do you want to upgrade to the next level?"
+          );
+          if (confirmUpgrade) {
+            level++;
+            investedMoney = 0;
+            resetUpgrades();
+            updateBallColor();
+          }
+        }
+
+        isClickable = false;
+        ball.classList.add("disabled");
+
+        setTimeout(function () {
+          isClickable = true;
+          ball.classList.remove("disabled");
+        }, waitTime);
+      }
+
+      function resetUpgrades() {
+        mpc = 1;
+        mpcUpgradeCost = 10;
+        doubleMoneyCost = 100;
+        decreaseWaitTimeCost = 50;
+        isDoubleMoneyActive = false;
+        isDecreaseWaitTimeActive = false;
+        waitTime = 1000;
+
+        updateMpcUpgradeCost();
+        updateDoubleMoneyCost();
+        updateDecreaseWaitTimeCost();
+      }
+
+      function updateMpcUpgradeCost() {
+        document.getElementById("mpcCost").textContent = mpcUpgradeCost;
+      }
+
+      function updateDoubleMoneyCost() {
+        document.getElementById(
+          "doubleMoneyCost"
+        ).textContent = doubleMoneyCost;
+      }
+
+      function updateDecreaseWaitTimeCost() {
+        document.getElementById(
+          "decreaseWaitTimeCost"
+        ).textContent = decreaseWaitTimeCost;
+      }
+
+      function buyMpcUpgrade() {
+        if (score >= mpcUpgradeCost) {
+          score -= mpcUpgradeCost;
+          mpcUpgradeCost *= mpcUpgradeFactor;
+          mpc *= mpcUpgradeFactor;
+          investedMoney = 0;
+          updateMpcUpgradeCost();
+          document.getElementById("score").textContent = "Score: " + score;
+        }
+      }
+
+      function activateDoubleMoney() {
+        if (score >= doubleMoneyCost && !isDoubleMoneyActive) {
+          score -= doubleMoneyCost;
+          isDoubleMoneyActive = true;
+          updateDoubleMoneyCost();
+          document.getElementById("score").textContent = "Score: " + score;
+
+          setTimeout(function () {
+            isDoubleMoneyActive = false;
+          }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+        }
+      }
+
+      function activateDecreaseWaitTime() {
+        if (score >= decreaseWaitTimeCost && !isDecreaseWaitTimeActive) {
+          score -= decreaseWaitTimeCost;
+          isDecreaseWaitTimeActive = true;
+          updateDecreaseWaitTimeCost();
+          document.getElementById("score").textContent = "Score: " + score;
+
+          waitTime = Math.max(
+            (waitTime * levelsThreshold[level]) /
+              (level * decreaseWaitTimeCost * levelsThreshold[level]),
+            100
+          );
+          if (isNaN(waitTime)) {
+            waitTime = 100;
+          }
+
+          setTimeout(function () {
+            isDecreaseWaitTimeActive = false;
+          }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+        }
+      }
+
+      ball.addEventListener("click", clickBall);
+      document
+        .getElementById("mpcButton")
+        .addEventListener("click", buyMpcUpgrade);
+      document
+        .getElementById("doubleMoneyButton")
+        .addEventListener("click", activateDoubleMoney);
+      document
+        .getElementById("decreaseWaitTimeButton")
+        .addEventListener("click", activateDecreaseWaitTime);
+
+      updateMpcUpgradeCost();
+      updateDoubleMoneyCost();
+      updateDecreaseWaitTimeCost();
+    </script>
+  </body>
+</html>
